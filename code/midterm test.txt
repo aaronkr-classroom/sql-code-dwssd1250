@@ -1,0 +1,33 @@
+CREAT TABLE student
+( id CHAR NOT NULL PRIMARY KEY,
+first_name VARCHER NOT NULL,
+last_name VARCHER NOT NULL);
+
+CREAT TABLE teacher
+( id CHAR NOT NULL PRIMARY KEY,
+first_name VARCHER NOT NULL,
+last_name VARCHER NOT NULL);
+
+CREAT TABLE course
+( id CHAR NOT NULL PRIMARY KEY,
+name VARCHER NOT NULL,
+teacher_id VARCHER NOT NULL);
+
+CREAT TABLE student_course
+( student_id CHER NOT NULL PRIMARY KEY,
+course_id CHER NOT NULL PRIMARY KEY);
+
+===================================
+
+===================================
+
+CREAT VIEW student_name(first_name, last_name)
+AS SELECT first_name, last_name FROM student JOIN Database Design;
+
+SELECT * FROM student_name;
+
+
+CREAT VIEW name_B(first_name)
+AS SELECT first_name FROM student, teacher WHERE first_name="B";
+
+SELECT * FROM name_B;
