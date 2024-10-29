@@ -1,0 +1,130 @@
+-- 새로운 manager 계정 만든다
+SELECT current_user; -- postgres (기본 사용자)
+
+CREATE USER manager WITH PASSWORD '1234';
+GRANT ALL PRIVILEGES ON DATABASE univdb TO manager; --데이터베이스 권한만
+GRANT ALL PRIVILEGES ON 학생2, 수강2, 과목2 TO manager; -- 테이블 권한만
+GRANT ALL ON SCHEMA public TO manager; -- 모든 권한 (인덱스 생성, PROCEDURE, FUNCTION까지)
+
+SELECT * FROM pg_namespace; -- 모든 스키마 표시
+
+ALTER DATABASE univdb OWNER TO manager; -- 데이터베이스 소유자를 변경하기
+ALTER TABLE 학생2 OWNER TO manager; -- 지금 뷰를 만들 수 있다.
+ALTER TABLE 수강2 OWNER TO manager;
+ALTER TABLE 과목2 OWNER TO manager;
+
+DROP INDEX IF EXISTS idx_수강;
+DROP INDEX IF EXISTS idx_과목;
+DROP INDEX IF EXISTS idx_학생;
+
+-- 위 드랍다운 화살표 누르고 New Connection... 선택
+-- univdb와 manager 계정 선택하고 저장하기
+SELECT current_user; -- manager (새로운 사용자!!!)
+
+
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE tablename = '학생2';
+
+EXPLAIN ANALYZE SELECT * FROM 수강2;
+
+----- manager로 변경 -----
+
+===========================================================================================================
+새로운 쿼리로 변경
+
+--숫자 내장 함수
+SELECT ABS(17), ABS(-17), CEIL(3.28), FLOOR(4.97);
+
+SELECT 학번, SUM(기말성적)::FLOAT/count(*) AS 평균성적, ROUND(SUM(기말성적)::FLOAT/COUNT(*), 2)
+FROM 수강2
+GROUP BY 학번;
+
+--문자 내장 함수
+SELECT LENGTH(소속학과), RIGHT(학번, 2), REPEAT('*', 나이), CONCAT(소속학과, '학과')
+FROM 학생;
+
+--REPLACE(SUBSTRING(휴대폰번호, 5, 9),'-', '*')
+SELECT SUBSTRING(주소, 1, 2), REPLACE(휴대폰번호, '-', '*')
+FROM 학생;
+
+-- 날짜 / 시간 내장 함수
+SELECT 신청날짜, DATE_TRUNC('MONTH', 신청날짜) + INTERVAL '1 MONTH -1 DAY' AS 마지막날
+FROM 수강
+WHERE EXTRACT(YEAR FROM 신청날짜) = 2019;
+
+SELECT CURRENT_TIMESTAMP, 신청날짜 - DATE '2019-01-01' AS 일수차이
+FROM 수강;
+
+SELECT 신청날짜, TO_CHAR(신청날짜, 'Mon/DD/YY') AS 형식1, TO_CHAR(신청날짜, 'YYYY''MM''월''DD''일''') AS 형식2
+FROM 수강;
+
+
+
+--저장 프로시저
+CREATE OR REPLACE PROCEDUCE InsertOrUpdateCourse(
+	IN CourseNo VARCHAR(4),
+	IN CourseName VARCHAR(20),
+	IN CourseRoom CHAR(3),
+	IN CourseDept VARCHAR(20),
+	IN CourseCredit INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+	COUNT INT;
+BEGIN
+	--과목이 이미 존재하는지 확인
+	SELECT COUNT(*) INTO Count FROM 과목 WHERE 과목번호 = Courseno;
+
+	IF Count = 0 THEN 
+		INSERT INTO 과목(과목번호, 이름, 강의실, 개설학과, 시수)
+		VALUES (Courseno, CourseName, CourseRoom, CourseDept, CourseCredit);
+	
+	ELSE 
+		UPDATE 과목
+		SET 이름 = CourseName, 강의실 = CourseRoom, 개설학과 = CourseDept, 시수 = CourseCredit
+		WHERE 과목번호 = Courseno
+	END IF;
+END;
+$$;
+
+-- CALL InsertOrUpdateCourse('c006', '연극학개론', '
+
+--BestScore 프로시저
+CREATE OR REPLACE PROCEDUCE SelectAverageOfBestScore(
+	IN Score INT,
+	Out Count Int
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+	NoMoreData BOOLEAN DEFAULT FALSE;
+	Midterm INT;
+	Final INT;
+	Best INT;
+	ScoreListCursor CURSOR FOR SELECT 중간성적, 기말성적 FROM 수강;
+BEGIN
+	Count := 0;
+	OPEN ScoreListCursor INTO Midterm, Final;
+	EXIT WHEN NOT FOUND;
+
+	IF Midterm > Final THEN
+		Best := Midterm;
+	ELSE
+		Best :
+........
+
+
+--MySQL만 가능
+--CALL SelectAverageOfBestScore(95, @Count);
+--SELECT @COUNT;
+
+
+DO $$
+DECLARE Count INT;
+BEGIN
+	CALL SelectAverageOfBestScore(96, Count);
+	RAISE NOTICE 'Count: %', Count;
+END;
+$$;
